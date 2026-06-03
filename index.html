@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blocks — Puzzle Game</title>
+  <link rel="stylesheet" href="style.css?v=4">
+</head>
+<body>
+  <div id="menu-screen" class="screen">
+    <h1 class="title">Blocks</h1>
+    <nav class="level-grid" id="level-grid"></nav>
+  </div>
+
+  <div id="game-screen" class="screen" style="display: none;">
+    <header class="game-header">
+      <button id="btn-back" class="header-btn">Voltar</button>
+      <span id="level-indicator" class="level-indicator"></span>
+      <button id="btn-reset" class="header-btn">Reiniciar</button>
+    </header>
+    <span id="move-counter" class="move-counter"></span>
+    <div id="board" class="board"></div>
+  </div>
+
+  <script src="script.js?v=4"></script>
+</body>
+</html>
