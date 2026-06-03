@@ -9,7 +9,7 @@
       <span style="font-size: 50px;">+</span>
     </td>
     <td align="center" valign="middle" style="border: none;">
-      <img src="./src/opencode-wordmark-dark.svg" alt="OpenCode Logo" width="200" />
+      <img src="./opencode-wordmark-dark.svg" alt="OpenCode Logo" width="200" />
     </td>
   </tr>
 </table>
