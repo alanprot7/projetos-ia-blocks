@@ -587,6 +587,14 @@ function markLevelSolved(levelId) {
   updateLevelButtons();
 }
 
+function resetScore() {
+  Object.keys(gameLevels).forEach((levelId) => {
+    localStorage.removeItem(`blocks_best_${levelId}`);
+    localStorage.removeItem(`blocks_solved_${levelId}`);
+  });
+  updateLevelButtons();
+}
+
 function loadSolvedLevels() {
   const solved = new Set();
   Object.keys(gameLevels).forEach((levelId) => {
@@ -665,6 +673,13 @@ $btnBack.addEventListener('click', () => {
 $btnReset.addEventListener('click', () => {
   if (currentLevel) {
     renderLevel(currentLevel);
+  }
+});
+
+const $btnResetScore = document.getElementById('btn-reset-score');
+$btnResetScore.addEventListener('click', () => {
+  if (confirm('Tem certeza que deseja apagar todo o progresso?')) {
+    resetScore();
   }
 });
 

@@ -72,6 +72,28 @@ body {
   background: #2ecc71;
 }
 
+.reset-score-btn {
+  position: fixed;
+  top: 25px;
+  right: 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px 0 0 8px;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+  transition: background 0.2s;
+}
+
+.reset-score-btn:hover {
+  background: #e74c3c;
+}
+
 /* ── Tela 2: Jogo ── */
 
 .game-header {
