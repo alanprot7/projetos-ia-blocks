@@ -7,12 +7,14 @@ const $levelGrid = document.getElementById('level-grid');
 const $moveCounter = document.getElementById('move-counter');
 const $levelIndicator = document.getElementById('level-indicator');
 
+const $loadingOverlay = document.getElementById('loading-overlay');
+
 const GRID_SIZE = 6;
 
 const gameLevels = {
   1: {
     blocks: [
-      { x: 2, y: 3, length: 2, orientation: 'h', type: 'red' },
+      { x: 1, y: 2, length: 2, orientation: 'h', type: 'red' },
       { x: 0, y: 2, length: 2, orientation: 'v', type: 'wood' },
       { x: 4, y: 1, length: 2, orientation: 'v', type: 'wood' },
     ],
@@ -266,7 +268,135 @@ const gameLevels = {
   },
 };
 
+function solveBlocks(blocks) {
+  const redIdx = blocks.findIndex((b) => b.type === 'red');
+  if (redIdx < 0) return null;
+  const start = blocks.map((b) => [b.x, b.y, b.length, b.orientation]);
+  const key = (state) => state.map((b) => b.join(',')).join('|');
+
+  const buildGrid = (state, exclude) => {
+    const g = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(false));
+    for (let i = 0; i < state.length; i++) {
+      if (i === exclude) continue;
+      const [x, y, l, o] = state[i];
+      if (o === 'h') for (let k = 0; k < l; k++) g[y][x + k] = true;
+      else for (let k = 0; k < l; k++) g[y + k][x] = true;
+    }
+    return g;
+  };
+
+  const isValid = (state, i, nx, ny, g) => {
+    const [, , l, o] = state[i];
+    if (nx < 0 || ny < 0) return false;
+    if (o === 'h') {
+      if (nx + l > GRID_SIZE) return false;
+      for (let k = 0; k < l; k++) if (g[ny][nx + k]) return false;
+    } else {
+      if (ny + l > GRID_SIZE) return false;
+      for (let k = 0; k < l; k++) if (g[ny + k][nx]) return false;
+    }
+    return true;
+  };
+
+  const seen = new Set([key(start)]);
+  const queue = [[start, 0]];
+  let head = 0;
+  while (head < queue.length) {
+    const [state, d] = queue[head++];
+    const [rx, , rl, ro] = state[redIdx];
+    if (ro === 'h' && rx + rl === GRID_SIZE) return d;
+    for (let i = 0; i < state.length; i++) {
+      const g = buildGrid(state, i);
+      const [x, y, l, o] = state[i];
+      if (o === 'h') {
+        for (let nx = x - 1; nx >= 0; nx--) {
+          if (!isValid(state, i, nx, y, g)) break;
+          const ns = state.slice();
+          ns[i] = [nx, y, l, o];
+          const k = key(ns);
+          if (!seen.has(k)) { seen.add(k); queue.push([ns, d + 1]); }
+        }
+        for (let nx = x + 1; nx <= GRID_SIZE - l; nx++) {
+          if (!isValid(state, i, nx, y, g)) break;
+          const ns = state.slice();
+          ns[i] = [nx, y, l, o];
+          const k = key(ns);
+          if (!seen.has(k)) { seen.add(k); queue.push([ns, d + 1]); }
+        }
+      } else {
+        for (let ny = y - 1; ny >= 0; ny--) {
+          if (!isValid(state, i, x, ny, g)) break;
+          const ns = state.slice();
+          ns[i] = [x, ny, l, o];
+          const k = key(ns);
+          if (!seen.has(k)) { seen.add(k); queue.push([ns, d + 1]); }
+        }
+        for (let ny = y + 1; ny <= GRID_SIZE - l; ny++) {
+          if (!isValid(state, i, x, ny, g)) break;
+          const ns = state.slice();
+          ns[i] = [x, ny, l, o];
+          const k = key(ns);
+          if (!seen.has(k)) { seen.add(k); queue.push([ns, d + 1]); }
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function generateRandomLevel() {
+  const rand = (n) => Math.floor(Math.random() * n);
+  for (let attempt = 0; attempt < 500; attempt++) {
+    const blocks = [];
+    const occupied = new Set();
+
+    const rx = rand(GRID_SIZE - 1);
+    const ry = 2;
+    blocks.push({ x: rx, y: ry, length: 2, orientation: 'h', type: 'red' });
+    occupied.add(`${rx},${ry}`);
+    occupied.add(`${rx + 1},${ry}`);
+
+    const nWood = 5 + rand(7);
+    let tries = 0;
+    while (blocks.length - 1 < nWood && tries < 500) {
+      tries++;
+      const o = Math.random() < 0.5 ? 'h' : 'v';
+      const len = Math.random() < 0.7 ? 2 : 3;
+      let x, y;
+      if (o === 'h') {
+        x = rand(GRID_SIZE - len + 1);
+        y = rand(GRID_SIZE);
+      } else {
+        x = rand(GRID_SIZE);
+        y = rand(GRID_SIZE - len + 1);
+      }
+      const cells = [];
+      for (let k = 0; k < len; k++) {
+        cells.push(o === 'h' ? `${x + k},${y}` : `${x},${y + k}`);
+      }
+      if (cells.some((c) => occupied.has(c))) continue;
+      if (o === 'h' && y === ry) continue;
+      cells.forEach((c) => occupied.add(c));
+      blocks.push({ x, y, length: len, orientation: o, type: 'wood' });
+    }
+
+    if (blocks.length < 4) continue;
+
+    const minMoves = solveBlocks(blocks);
+    if (minMoves !== null && minMoves >= 3) return blocks;
+  }
+  return [
+    { x: 1, y: 2, length: 2, orientation: 'h', type: 'red' },
+    { x: 0, y: 0, length: 2, orientation: 'v', type: 'wood' },
+    { x: 3, y: 0, length: 2, orientation: 'v', type: 'wood' },
+    { x: 5, y: 0, length: 3, orientation: 'v', type: 'wood' },
+    { x: 0, y: 3, length: 3, orientation: 'h', type: 'wood' },
+    { x: 4, y: 3, length: 2, orientation: 'v', type: 'wood' },
+  ];
+}
+
 let currentLevel = null;
+let activeBlocks = null;
 let moveCount = 0;
 
 function showScreen(screen) {
@@ -284,12 +414,12 @@ function renderLevel(levelId) {
   moveCount = 0;
   updateMoveCounter();
 
-  const level = gameLevels[levelId];
-  if (!level) return;
+  const blocks = activeBlocks;
+  if (!blocks) return;
 
   const cellSize = $board.offsetWidth / GRID_SIZE;
 
-  level.blocks.forEach((block) => {
+  blocks.forEach((block) => {
     const $block = document.createElement('div');
     $block.classList.add('block', `block-${block.type}`);
     $block.dataset.x = block.x;
@@ -498,9 +628,13 @@ function checkWinCondition() {
   const { x, length, orientation } = getBlockProps(redBlock);
 
   if (orientation === 'h' && x + length === GRID_SIZE) {
-    markLevelSolved(currentLevel);
-    const isNewRecord = saveBestRecord(currentLevel, moveCount);
-    showWinModal(moveCount, getBestRecord(currentLevel), isNewRecord);
+    if (currentLevel === 'random') {
+      showWinModal(moveCount, null, false);
+    } else {
+      markLevelSolved(currentLevel);
+      const isNewRecord = saveBestRecord(currentLevel, moveCount);
+      showWinModal(moveCount, getBestRecord(currentLevel), isNewRecord);
+    }
   }
 }
 function createWinModal() {
@@ -525,7 +659,12 @@ function createWinModal() {
     if (document.getElementById('confetti-container')) {
       document.getElementById('confetti-container').remove();
     }
-    goToNextUnsolved();
+    if (currentLevel === 'random') {
+      showScreen('menu');
+      updateLevelButtons();
+    } else {
+      goToNextUnsolved();
+    }
   });
 }
 
@@ -546,7 +685,13 @@ function showWinModal(moves, best, isNewRecord) {
 
   const overlay = document.getElementById('win-overlay');
   overlay.querySelector('.win-moves').textContent = `${moves} movimento${moves !== 1 ? 's' : ''}`;
-  overlay.querySelector('.win-record').textContent = `Recorde: ${best}`;
+  const $record = overlay.querySelector('.win-record');
+  if (best === null) {
+    $record.style.display = 'none';
+  } else {
+    $record.style.display = '';
+    $record.textContent = `Recorde: ${best}`;
+  }
   overlay.querySelector('.win-new-record').style.display = isNewRecord ? 'block' : 'none';
 
   overlay.classList.add('active');
@@ -611,6 +756,7 @@ function updateLevelButtons() {
   if (!container) return;
   const buttons = container.querySelectorAll('.level-btn');
   buttons.forEach((btn) => {
+    if (btn.dataset.level === 'random') return;
     const level = parseInt(btn.dataset.level);
     if (solved.has(level)) {
       btn.classList.add('level-btn--solved');
@@ -651,18 +797,44 @@ function buildLevelMenu() {
     btn.textContent = levelId;
     $levelGrid.appendChild(btn);
   });
+
+  const rbtn = document.createElement('button');
+  rbtn.className = 'level-btn level-btn--random';
+  rbtn.dataset.level = 'random';
+  rbtn.textContent = 'Aleatório';
+  $levelGrid.appendChild(rbtn);
 }
 
 $levelGrid.addEventListener('click', (e) => {
   const btn = e.target.closest('.level-btn');
   if (!btn) return;
-  startLevel(btn.dataset.level);
+  if (btn.dataset.level === 'random') startRandom();
+  else startLevel(btn.dataset.level);
 });
 function startLevel(level) {
   currentLevel = level;
+  activeBlocks = gameLevels[level].blocks;
   $levelIndicator.textContent = `Desafio ${level}`;
   showScreen('game');
   renderLevel(level);
+}
+
+function startRandom() {
+  $loadingOverlay.style.display = 'flex';
+  setTimeout(() => {
+    const blocks = generateRandomLevel();
+    const minMoves = solveBlocks(blocks);
+    $loadingOverlay.style.display = 'none';
+    if (minMoves !== null) {
+      activeBlocks = blocks;
+      currentLevel = 'random';
+      $levelIndicator.textContent = 'Aleatório';
+      showScreen('game');
+      renderLevel('random');
+    } else {
+      startRandom();
+    }
+  }, 50);
 }
 
 $btnBack.addEventListener('click', () => {
