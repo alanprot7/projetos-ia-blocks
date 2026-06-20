@@ -346,7 +346,7 @@ function solveBlocks(blocks) {
 
 function generateRandomLevel() {
   const rand = (n) => Math.floor(Math.random() * n);
-  for (let attempt = 0; attempt < 500; attempt++) {
+  for (let attempt = 0; attempt < 1000; attempt++) {
     const blocks = [];
     const occupied = new Set();
 
@@ -383,7 +383,7 @@ function generateRandomLevel() {
     if (blocks.length < 4) continue;
 
     const minMoves = solveBlocks(blocks);
-    if (minMoves !== null && minMoves >= 3) return blocks;
+    if (minMoves !== null && minMoves >= 10) return blocks;
   }
   return [
     { x: 1, y: 2, length: 2, orientation: 'h', type: 'red' },
