@@ -977,3 +977,7 @@ $randomGrid.addEventListener('click', (e) => {
 
 buildLevelMenu();
 updateLevelButtons();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
