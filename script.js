@@ -1,9 +1,12 @@
 const $menuScreen = document.getElementById('menu-screen');
+const $randomScreen = document.getElementById('random-screen');
 const $gameScreen = document.getElementById('game-screen');
 const $board = document.getElementById('board');
 const $btnBack = document.getElementById('btn-back');
+const $btnBackToMenu = document.getElementById('btn-back-to-menu');
 const $btnReset = document.getElementById('btn-reset');
 const $levelGrid = document.getElementById('level-grid');
+const $randomGrid = document.getElementById('random-grid');
 const $moveCounter = document.getElementById('move-counter');
 const $levelIndicator = document.getElementById('level-indicator');
 
@@ -400,11 +403,15 @@ let activeBlocks = null;
 let moveCount = 0;
 
 function showScreen(screen) {
+  $menuScreen.style.display = 'none';
+  $randomScreen.style.display = 'none';
+  $gameScreen.style.display = 'none';
+
   if (screen === 'menu') {
     $menuScreen.style.display = 'flex';
-    $gameScreen.style.display = 'none';
+  } else if (screen === 'random') {
+    $randomScreen.style.display = 'flex';
   } else if (screen === 'game') {
-    $menuScreen.style.display = 'none';
     $gameScreen.style.display = 'flex';
   }
 }
@@ -628,8 +635,10 @@ function checkWinCondition() {
   const { x, length, orientation } = getBlockProps(redBlock);
 
   if (orientation === 'h' && x + length === GRID_SIZE) {
-    if (currentLevel === 'random') {
-      showWinModal(moveCount, null, false);
+    if (currentLevel.startsWith('A')) {
+      markRandomLevelSolved(currentLevel);
+      const isNewRecord = saveBestRecord(currentLevel, moveCount);
+      showWinModal(moveCount, getBestRecord(currentLevel), isNewRecord);
     } else {
       markLevelSolved(currentLevel);
       const isNewRecord = saveBestRecord(currentLevel, moveCount);
@@ -659,9 +668,9 @@ function createWinModal() {
     if (document.getElementById('confetti-container')) {
       document.getElementById('confetti-container').remove();
     }
-    if (currentLevel === 'random') {
-      showScreen('menu');
-      updateLevelButtons();
+    if (currentLevel.startsWith('A')) {
+      showScreen('random');
+      buildRandomMenu();
     } else {
       goToNextUnsolved();
     }
@@ -737,7 +746,26 @@ function resetScore() {
     localStorage.removeItem(`blocks_best_${levelId}`);
     localStorage.removeItem(`blocks_solved_${levelId}`);
   });
+  const count = parseInt(localStorage.getItem('blocks_random_count') || '0');
+  for (let i = 1; i <= count; i++) {
+    const id = `A${String(i).padStart(3, '0')}`;
+    localStorage.removeItem(`blocks_best_${id}`);
+    localStorage.removeItem(`blocks_solved_${id}`);
+  }
   updateLevelButtons();
+  buildRandomMenu();
+}
+
+function deleteRandomLevels() {
+  const count = parseInt(localStorage.getItem('blocks_random_count') || '0');
+  for (let i = 1; i <= count; i++) {
+    const id = `A${String(i).padStart(3, '0')}`;
+    localStorage.removeItem(`blocks_random_${id}`);
+    localStorage.removeItem(`blocks_best_${id}`);
+    localStorage.removeItem(`blocks_solved_${id}`);
+  }
+  localStorage.removeItem('blocks_random_count');
+  buildRandomMenu();
 }
 
 function loadSolvedLevels() {
@@ -748,6 +776,55 @@ function loadSolvedLevels() {
     }
   });
   return solved;
+}
+
+function getNextRandomId() {
+  const count = parseInt(localStorage.getItem('blocks_random_count') || '0');
+  return count + 1;
+}
+
+function saveRandomLevel(blocks) {
+  const nextId = getNextRandomId();
+  const id = `A${String(nextId).padStart(3, '0')}`;
+  localStorage.setItem(`blocks_random_${id}`, JSON.stringify(blocks));
+  localStorage.setItem('blocks_random_count', nextId);
+  return id;
+}
+
+function loadRandomLevels() {
+  const count = parseInt(localStorage.getItem('blocks_random_count') || '0');
+  const levels = [];
+  for (let i = 1; i <= count; i++) {
+    const id = `A${String(i).padStart(3, '0')}`;
+    const data = localStorage.getItem(`blocks_random_${id}`);
+    if (data) {
+      levels.push({ id, blocks: JSON.parse(data) });
+    }
+  }
+  return levels;
+}
+
+function isRandomLevelSolved(id) {
+  return localStorage.getItem(`blocks_solved_${id}`) === 'true';
+}
+
+function markRandomLevelSolved(id) {
+  localStorage.setItem(`blocks_solved_${id}`, 'true');
+}
+
+function buildRandomMenu() {
+  $randomGrid.innerHTML = '';
+  const levels = loadRandomLevels();
+  levels.forEach((level) => {
+    const btn = document.createElement('button');
+    btn.className = 'level-btn level-btn--random-item';
+    btn.dataset.level = level.id;
+    btn.textContent = level.id;
+    if (isRandomLevelSolved(level.id)) {
+      btn.classList.add('level-btn--solved');
+    }
+    $randomGrid.appendChild(btn);
+  });
 }
 
 function updateLevelButtons() {
@@ -826,11 +903,12 @@ function startRandom() {
     const minMoves = solveBlocks(blocks);
     $loadingOverlay.style.display = 'none';
     if (minMoves !== null) {
+      const id = saveRandomLevel(blocks);
       activeBlocks = blocks;
-      currentLevel = 'random';
-      $levelIndicator.textContent = 'Aleatório';
+      currentLevel = id;
+      $levelIndicator.textContent = id;
       showScreen('game');
-      renderLevel('random');
+      renderLevel(id);
     } else {
       startRandom();
     }
@@ -838,8 +916,13 @@ function startRandom() {
 }
 
 $btnBack.addEventListener('click', () => {
-  showScreen('menu');
-  updateLevelButtons();
+  if (currentLevel && currentLevel.startsWith('A')) {
+    showScreen('random');
+    buildRandomMenu();
+  } else {
+    showScreen('menu');
+    updateLevelButtons();
+  }
 });
 
 $btnReset.addEventListener('click', () => {
@@ -852,6 +935,43 @@ const $btnResetScore = document.getElementById('btn-reset-score');
 $btnResetScore.addEventListener('click', () => {
   if (confirm('Tem certeza que deseja apagar todo o progresso?')) {
     resetScore();
+  }
+});
+
+const $btnDeleteLevels = document.getElementById('btn-delete-levels');
+$btnDeleteLevels.addEventListener('click', () => {
+  const first = confirm(
+    'Este botão vai apagar os níveis, ou seja, vai apagar todos os jogos criados.\n\nSe você quer só zerar os recordes e as soluções, volte para o menu e clique em reset.'
+  );
+  if (!first) return;
+  const second = confirm('Você tem certeza mesmo?\n\nSe fizer isso não poderá ser revertido.');
+  if (second) {
+    deleteRandomLevels();
+  }
+});
+
+$btnBackToMenu.addEventListener('click', () => {
+  showScreen('menu');
+  updateLevelButtons();
+});
+
+const $btnGoRandom = document.getElementById('btn-go-random');
+$btnGoRandom.addEventListener('click', () => {
+  buildRandomMenu();
+  showScreen('random');
+});
+
+$randomGrid.addEventListener('click', (e) => {
+  const btn = e.target.closest('.level-btn');
+  if (!btn) return;
+  const id = btn.dataset.level;
+  const data = localStorage.getItem(`blocks_random_${id}`);
+  if (data) {
+    activeBlocks = JSON.parse(data);
+    currentLevel = id;
+    $levelIndicator.textContent = id;
+    showScreen('game');
+    renderLevel(id);
   }
 });
 

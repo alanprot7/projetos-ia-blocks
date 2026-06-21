@@ -83,6 +83,117 @@ body {
   background: #e74c3c;
 }
 
+/* ── Tela Aleatórios ── */
+
+#random-screen .level-grid {
+  max-height: calc(7 * (2rem + 1.25rem + 1rem) + 6 * 1rem);
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+#random-screen .level-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+#random-screen .level-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#random-screen .level-grid::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 3px;
+}
+
+.subtitle {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #aaa;
+  margin-bottom: 2.5rem;
+  letter-spacing: 2px;
+}
+
+.back-to-menu-btn {
+  position: fixed;
+  top: 25px;
+  left: 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 0 8px 8px 0;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+  transition: background 0.2s;
+  z-index: 10;
+}
+
+.back-to-menu-btn:hover {
+  background: #2ecc71;
+}
+
+.go-random-btn {
+  position: fixed;
+  top: 25px;
+  left: 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 0 8px 8px 0;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+  transition: background 0.2s;
+  z-index: 10;
+}
+
+.go-random-btn:hover {
+  background: #e74c3c;
+}
+
+.delete-levels-btn {
+  position: fixed;
+  top: 25px;
+  right: 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px 0 0 8px;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+  transition: background 0.2s;
+  z-index: 10;
+}
+
+.delete-levels-btn:hover {
+  background: #e74c3c;
+}
+
+.level-btn--random-item {
+  background: #4a4a4a;
+}
+
+.level-btn--random-item.level-btn--solved {
+  background: #27ae60;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.35);
+}
+
+.level-btn--random-item.level-btn--solved:hover {
+  background: #2ecc71;
+}
+
 .reset-score-btn {
   position: fixed;
   top: 25px;
