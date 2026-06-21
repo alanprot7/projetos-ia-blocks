@@ -1,13 +1,13 @@
-const CACHE_NAME = 'blocks-v1';
+const CACHE_NAME = 'blocks-v2';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/script.js',
-  '/favicon.svg',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/manifest.json'
+  './',
+  './index.html',
+  './style.css',
+  './script.js',
+  './favicon.svg',
+  './icon-192.png',
+  './icon-512.png',
+  './manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
